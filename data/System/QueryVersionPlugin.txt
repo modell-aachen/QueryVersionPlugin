@@ -1,0 +1,35 @@
+---+!! !QueryVersionPlugin
+
+<!-- One line description, required for extensions repository catalog. BuildContrib will fill in the SHORTDESCRIPTION with the value of $SHORTDESCRIPTION from the .pm module, or you can redefine it here if you prefer.
+   * Set SHORTDESCRIPTION = %$SHORTDESCRIPTION%
+-->
+
+%SHORTDESCRIPTION%
+
+---++ Usage
+| *Parameter* | *Description* | *Default* |
+| "..." (or name="...") | Name of plugin or contrib, e.g. =ModacSkin= | |
+| format="..." | A string used for formatting the version string. Variable =$version= may be used as placeholder. | $version |
+
+*Examples*
+   * =%<nop>QUERYVERSION{"ModacSkin"}%=
+      * Expands to =%QUERYVERSION{"ModacSkin"}%=
+
+   * =%<nop>QUERYVERSION{name="ModacSkin"}%=
+      * Expands to =%QUERYVERSION{name="ModacSkin"}%=
+
+   * =%<nop>QUERYVERSION{name="ModacSkin" format="lala $version lala"}%=
+      * Expands to =%QUERYVERSION{name="ModacSkin" format="lala $version lala"}%=
+
+
+---++ Info
+
+|  Author(s): | Modell Aachen !GmbH |
+|  Copyright: | &copy; Modell Aachen !GmbH |
+|  License: | [[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]] |
+|  Release: | %$RELEASE% |
+|  Version: | %$VERSION% |
+|  Change History: | <!-- versions below in reverse order --> |
+|  Dependencies: | %$DEPENDENCIES% |
+|  Home page: | [[http://www.modell-aachen.de][Modell Aachen]] |
+|  Support: | [[http://www.modell-aachen.de][Modell Aachen]] |
