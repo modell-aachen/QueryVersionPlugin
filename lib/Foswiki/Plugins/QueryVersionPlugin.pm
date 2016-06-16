@@ -27,11 +27,13 @@ sub query {
 
   my $name = $params->{_DEFAULT} || $params->{name} || '';
   return '' unless $name;
-  
+  $name =~ s#/.*##; # this is typically %TMPL:P{"LIBJS" id="MyPlugin/file" ... }%
+  return '' if $name eq '';
+
   my $version;
   my $format = $params->{format} || '';
   unless ($name =~ /(Contrib|Skin)$/) {
-    return '' unless ref($Foswiki::cfg{Plugins}{$name}) eq 'HASH';
+    return '' unless ref($Foswiki::cfg{Plugins}{$name}) eq 'HASH'; # eg. %TMPL:P{"JIBJS" id="JavaScriptFiles/..." ... }%
     if ($Foswiki::cfg{Plugins}{$name}{Enabled}) {
       return _format($Foswiki::cfg{Plugins}{$name}{Module}->VERSION, $format);
     }
