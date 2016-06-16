@@ -85,7 +85,7 @@ sub _format {
 1;
 
 __END__
-Q.Wiki Tasks API - Modell Aachen GmbH
+QueryVerionPlugin - Modell Aachen GmbH
 
 Author: %$AUTHOR%
 
