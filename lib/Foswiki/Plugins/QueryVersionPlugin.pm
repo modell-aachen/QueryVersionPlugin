@@ -18,11 +18,11 @@ sub initPlugin {
     return 0;
   }
 
-  Foswiki::Func::registerTagHandler('QUERYVERSION', \&_QUERY);
+  Foswiki::Func::registerTagHandler('QUERYVERSION', \&query);
   return 1;
 }
 
-sub _QUERY {
+sub query {
   my( $session, $params, $topic, $web, $topicObject ) = @_;
 
   my $name = $params->{_DEFAULT} || $params->{name} || '';
