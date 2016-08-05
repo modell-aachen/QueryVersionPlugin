@@ -9,6 +9,8 @@ our $RELEASE = '1.0.0';
 our $NO_PREFS_IN_TOPIC = 1;
 our $SHORTDESCRIPTION = 'Queries plugins and contribs and returns their version.';
 
+our $versionCache = {};
+
 sub initPlugin {
   my ($topic, $web, $user, $installWeb) = @_;
 
@@ -18,52 +20,63 @@ sub initPlugin {
     return 0;
   }
 
-  Foswiki::Func::registerTagHandler('QUERYVERSION', \&_QUERY);
+  Foswiki::Func::registerTagHandler('QUERYVERSION', \&query);
   return 1;
 }
 
-sub _QUERY {
+sub query {
   my( $session, $params, $topic, $web, $topicObject ) = @_;
 
   my $name = $params->{_DEFAULT} || $params->{name} || '';
   return '' unless $name;
-  
+  $name =~ s#/.*##; # this is typically %TMPL:P{"LIBJS" id="MyPlugin/file" ... }%
+  return '' if $name eq '';
+
   my $version;
   my $format = $params->{format} || '';
-  unless ($name =~ /(Contrib|Skin)$/) {
-    return '' unless ref($Foswiki::cfg{Plugins}{$name}) eq 'HASH';
-    if ($Foswiki::cfg{Plugins}{$name}{Enabled}) {
-      return _format($Foswiki::cfg{Plugins}{$name}{Module}->VERSION, $format);
-    }
+  my $moduleVersion = $versionCache->{$name};
 
-    eval {
-      my $mod = "$Foswiki::cfg{Plugins}{$name}{Module}.pm";
-      $mod =~ s/::/\//g;
-      require $mod;
-      $version = _format($Foswiki::cfg{Plugins}{$name}{Module}->VERSION, $format);
-      1;
-    };
-
-    Foswiki::Func::writeWarning(
-      "Unable to find VERSION string for given plugin name '$name'"
-    ) unless $version;
-
-    return $version || '';
+  if(defined $moduleVersion) {
+    return _format($moduleVersion, $format);
   }
 
-  eval {
-    my $contrib = "Foswiki/Contrib/$name.pm";
-    require $contrib;
-    my $mod = "Foswiki::Contrib::$name";
-    $version = _format($mod->VERSION, $format) if $mod->VERSION;
-    1;
-  };
+  unless ($name =~ /(Contrib|Skin)$/) {
+    return '' unless ref($Foswiki::cfg{Plugins}{$name}) eq 'HASH'; # eg. %TMPL:P{"JIBJS" id="JavaScriptFiles/..." ... }%
+    if ($Foswiki::cfg{Plugins}{$name}{Enabled}) {
+      $moduleVersion = $Foswiki::cfg{Plugins}{$name}{Module}->VERSION;
+    } else {
+      eval {
+        my $mod = "$Foswiki::cfg{Plugins}{$name}{Module}.pm";
+        $mod =~ s/::/\//g;
+        require $mod;
+        $moduleVersion = $Foswiki::cfg{Plugins}{$name}{Module}->VERSION;
+        1;
+      };
+    }
+  } else {
+    eval {
+      my $contrib = "Foswiki/Contrib/$name.pm";
+      require $contrib;
+      my $mod = "Foswiki::Contrib::$name";
 
-  $version || '';
+      $moduleVersion = $mod->VERSION;
+      1;
+    };
+  }
+
+  Foswiki::Func::writeWarning(
+    "Unable to find VERSION string for given name '$name'"
+  ) unless $moduleVersion;
+
+  $versionCache->{$name} = $moduleVersion;
+  $version = _format($moduleVersion, $format);
+
+  return $version;
 }
 
 sub _format {
   my ($version, $format) = @_;
+  return '' unless defined $version;
   return $version unless $format;
   $format =~ s/\$version/$version/g;
   return $format;
@@ -72,7 +85,7 @@ sub _format {
 1;
 
 __END__
-Q.Wiki Tasks API - Modell Aachen GmbH
+QueryVerionPlugin - Modell Aachen GmbH
 
 Author: %$AUTHOR%
 
