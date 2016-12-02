@@ -27,10 +27,12 @@ sub initPlugin {
 sub query {
   my( $session, $params, $topic, $web, $topicObject ) = @_;
 
+  # This may come from %TMPL:P{"LIBJS" id="MyPlugin/file" ... }%, so expect
+  # some junk after the plugin name. However we must be careful not to include
+  # malicious code, since we might run this through an eval.
   my $name = $params->{_DEFAULT} || $params->{name} || '';
-  return '' unless $name;
-  $name =~ s#/.*##; # this is typically %TMPL:P{"LIBJS" id="MyPlugin/file" ... }%
-  return '' if $name eq '';
+  return '' unless $name && $name =~ m#^([a-zA-Z]+)#;
+  $name = $1;
 
   my $version;
   my $format = $params->{format} || '';
@@ -43,30 +45,35 @@ sub query {
   unless ($name =~ /(Contrib|Skin)$/) {
     return '' unless ref($Foswiki::cfg{Plugins}{$name}) eq 'HASH'; # eg. %TMPL:P{"JIBJS" id="JavaScriptFiles/..." ... }%
     if ($Foswiki::cfg{Plugins}{$name}{Enabled}) {
-      $moduleVersion = $Foswiki::cfg{Plugins}{$name}{Module}->VERSION;
-    } else {
-      eval {
-        my $mod = "$Foswiki::cfg{Plugins}{$name}{Module}.pm";
-        $mod =~ s/::/\//g;
-        require $mod;
-        $moduleVersion = $Foswiki::cfg{Plugins}{$name}{Module}->VERSION;
+      eval <<EVAL
+        \$moduleVersion = \$$Foswiki::cfg{Plugins}{$name}{Module}::RELEASE;
         1;
-      };
+EVAL
+    } else {
+      my $mod = "$Foswiki::cfg{Plugins}{$name}{Module}.pm";
+      $mod =~ s/::/\//g;
+      eval <<EVAL
+        require \$mod;
+        \$moduleVersion = \$$Foswiki::cfg{Plugins}{$name}{Module}::RELEASE;
+        1;
+EVAL
     }
   } else {
-    eval {
-      my $contrib = "Foswiki/Contrib/$name.pm";
-      require $contrib;
-      my $mod = "Foswiki::Contrib::$name";
-
-      $moduleVersion = $mod->VERSION;
+    my $contrib = "Foswiki/Contrib/$name.pm";
+    eval <<EVAL;
+      require \$contrib;
+      \$moduleVersion = \$Foswiki::Contrib::${name}::RELEASE;
       1;
-    };
+EVAL
   }
 
-  Foswiki::Func::writeWarning(
-    "Unable to find VERSION string for given name '$name'"
-  ) unless $moduleVersion;
+  if ($moduleVersion) {
+    $moduleVersion =~ s/\s/_/g; # clean date strings
+  } else {
+    Foswiki::Func::writeWarning(
+      "Unable to find RELEASE string for given name '$name'"
+    );
+  }
 
   $versionCache->{$name} = $moduleVersion;
   $version = _format($moduleVersion, $format);
