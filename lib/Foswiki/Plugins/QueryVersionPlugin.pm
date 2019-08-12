@@ -38,7 +38,7 @@ sub query {
   my $format = $params->{format} || '';
   my $moduleVersion = $versionCache->{$name};
 
-  if(defined $moduleVersion) {
+  if( defined $moduleVersion && 'UeberQWiki' ne $topic ) {
     return _format($moduleVersion, $format);
   }
 
@@ -77,6 +77,11 @@ EVAL
 
   $versionCache->{$name} = $moduleVersion;
   $version = _format($moduleVersion, $format);
+
+  if( 'UeberQWiki' eq $topic && 'QwikiContrib' eq $name ) {
+    $version =~ s/4\.21\./Riga LTS /g;
+    return $version;
+  }
 
   return $version;
 }
